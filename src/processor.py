@@ -1,88 +1,89 @@
 import pandas as pd
 import os
+from typing import List, Dict, Any
 
 
-def calculate_probabilities():
+def calculate_probabilities() -> None:
     """
-    Calculates specific probabilities from cleaned Estonian datasets.
+    Analyzes cleaned datasets to derive probability metrics.
+    Implements a simple Bayesian approach by comparing national priors
+    to regional posterior context (Saaremaa).
     """
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    clean_data_dir = os.path.join(base_dir, 'data', 'fixed_dataset')
-    output_dir = os.path.join(base_dir, 'output')
+    base_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    clean_data_dir: str = os.path.join(base_dir, 'data', 'fixed_dataset')
+    output_dir: str = os.path.join(base_dir, 'output')
     os.makedirs(output_dir, exist_ok=True)
 
-    results = []
+    results: List[Dict[str, Any]] = []
 
-    # 1. MEAT (meat_fixed.csv)
+    # 1. MEAT CONSUMPTION
     try:
-        filename = 'meat_fixed.csv'
-        df_meat = pd.read_csv(os.path.join(clean_data_dir, filename))
-        latest_year = str(df_meat['Year'].max())
-        latest_data = df_meat[df_meat['Year'].astype(str) == latest_year]
+        df_meat: pd.DataFrame = pd.read_csv(os.path.join(clean_data_dir, 'meat_fixed.csv'))
+        latest_year: str = str(df_meat['Year'].max())
+        meat_data: pd.DataFrame = df_meat[df_meat['Year'].astype(str) == latest_year]
 
-        pork_cons = latest_data[latest_data['Type of meat'] == 'Pork']['Human consumption, thousand tons'].values[0]
-        total_cons = \
-        latest_data[latest_data['Type of meat'] == 'Meat and offals total']['Human consumption, thousand tons'].values[
-            0]
+        pork: float = meat_data[meat_data['Type of meat'] == 'Pork']['Human consumption, thousand tons'].values[0]
+        total: float = \
+        meat_data[meat_data['Type of meat'] == 'Meat and offals total']['Human consumption, thousand tons'].values[0]
 
         results.append({
             'event': f'Consumed meat is Pork ({latest_year})',
-            'probability': round(pork_cons / total_cons, 2),
-            'source_file': filename
+            'probability': round(pork / total, 2),
+            'source_file': 'meat_fixed.csv'
         })
     except Exception as e:
-        print(f"Error processing meat: {e}")
+        print(f"Meat calculation failed: {e}")
 
-    # 2. FISHING (fish_fixed.csv)
+    # 2. FISHING
     try:
-        filename = 'fish_fixed.csv'
-        df_fish = pd.read_csv(os.path.join(clean_data_dir, filename))
+        df_fish: pd.DataFrame = pd.read_csv(os.path.join(clean_data_dir, 'fish_fixed.csv'))
         latest_year = str(df_fish['Year'].max())
-        year_data = df_fish[df_fish['Year'].astype(str) == latest_year]
+        fish_latest: pd.DataFrame = df_fish[df_fish['Year'].astype(str) == latest_year]
 
-        total_catch = year_data[year_data.iloc[:, 0].str.contains('total', case=False)]['Catch_amount'].sum()
-        cod_catch = year_data[year_data.iloc[:, 0].str.contains('Atlantic cod', case=False)]['Catch_amount'].sum()
+        total_catch: float = fish_latest[fish_latest.iloc[:, 0].str.contains('total', case=False)]['Catch_amount'].sum()
+        cod_catch: float = fish_latest[fish_latest.iloc[:, 0].str.contains('Atlantic cod', case=False)][
+            'Catch_amount'].sum()
 
         results.append({
             'event': f'Ocean fish is Atlantic Cod ({latest_year})',
-            'probability': round(cod_catch / total_catch, 2) if total_catch > 0 else 0,
-            'source_file': filename
+            'probability': round(cod_catch / total_catch, 2),
+            'source_file': 'fish_fixed.csv'
         })
     except Exception as e:
-        print(f"Error processing fish: {e}")
+        print(f"Fish calculation failed: {e}")
 
-    # 3. FOREST (forest_fixed.csv)
+    # 3. FOREST (Bayesian Reasoning)
+    # P(Planting) = Prior (National)
+    # P(Planting | Saaremaa) = Posterior (Evidence-based)
     try:
-        filename = 'forest_fixed.csv'
-        df_forest = pd.read_csv(os.path.join(clean_data_dir, filename))
-        latest_year = df_forest['Year'].max()
-        forest_latest = df_forest[df_forest['Year'] == latest_year]
+        df_for: pd.DataFrame = pd.read_csv(os.path.join(clean_data_dir, 'forest_fixed.csv'))
+        latest_year = df_for['Year'].max()
+        for_latest: pd.DataFrame = df_for[df_for['Year'] == latest_year]
 
-        # National
-        total_all = forest_latest[forest_latest['County'] == 'Whole country']['Total'].values[0]
-        plant_all = forest_latest[forest_latest['County'] == 'Whole country']['Planting'].values[0]
+        # Prior
+        nat_total: float = for_latest[for_latest['County'] == 'Whole country']['Total'].values[0]
+        nat_plant: float = for_latest[for_latest['County'] == 'Whole country']['Planting'].values[0]
 
-        # Bayesian context (Saaremaa)
-        saare_total = forest_latest[forest_latest['County'].str.contains('Saare')]['Total'].values[0]
-        saare_plant = forest_latest[forest_latest['County'].str.contains('Saare')]['Planting'].values[0]
+        # Posterior
+        saare_total: float = for_latest[for_latest['County'].str.contains('Saare')]['Total'].values[0]
+        saare_plant: float = for_latest[for_latest['County'].str.contains('Saare')]['Planting'].values[0]
 
         results.append({
-            'event': 'Forest renewal method is Planting (Whole country)',
-            'probability': round(plant_all / total_all, 2),
-            'source_file': filename
+            'event': 'Forest renewal is Planting (National Prior)',
+            'probability': round(nat_plant / nat_total, 2),
+            'source_file': 'forest_fixed.csv'
         })
         results.append({
-            'event': 'Forest renewal is Planting (Context: Saaremaa)',
+            'event': 'Forest renewal is Planting (Saaremaa Posterior)',
             'probability': round(saare_plant / saare_total, 2),
-            'source_file': filename
+            'source_file': 'forest_fixed.csv'
         })
     except Exception as e:
-        print(f"Error processing forest: {e}")
+        print(f"Forest calculation failed: {e}")
 
-    # Save summary
-    summary_df = pd.DataFrame(results)
-    summary_df.to_csv(os.path.join(output_dir, 'probabilities.csv'), index=False)
-    print(f"Calculated {len(results)} events. Saved to output/probabilities.csv")
+    # Final summary
+    pd.DataFrame(results).to_csv(os.path.join(output_dir, 'probabilities.csv'), index=False)
+    print("Probability calculations complete.")
 
 
 if __name__ == "__main__":

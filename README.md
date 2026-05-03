@@ -1,48 +1,44 @@
-# RMK Data Team Internship 2026: Probability Scale Challenge
+# RMK Probability Scale Challenge 2026
 
 ## Overview
-People intuitively understand physical distances (centimeters vs. kilometers), but often struggle to distinguish between probabilities like 0.04 and 0.4. This project aims to bridge that gap by creating an **intuitive probability scale** based on real-world Estonian data.
+People intuitively understand physical distances (centimeters vs. kilometers), but often struggle to distinguish between probabilities like 0.04 and 0.4. This project aims to bridge that gap by creating an intuitive probability scale based on real-world Estonian data.
 
 The project programmatically ingests data, cleans broken encodings, performs statistical calculations, and visualizes the results on a human-readable scale.
 
-## Key Features
-- **Programmatic Ingestion**: Automated data fetching from the Estonian Data Portal.
-- **Robust Preprocessing**: Custom logic to fix Estonian broken encodings and cleaning of hierarchical artifacts (leading dots) common in official statistics.
-- **Statistical Analysis**: Includes both national averages and **Bayesian updates** (calculating how location-specific context, like being in Saaremaa, shifts reforestation probabilities).
-- **Aesthetic Visualization**: A color-coded probability scale categorized by data source, including "intuition zones" (Unlikely, Possible, Highly Likely).
+
+## Thought Process & Challenges
+### 1. Data Selection
+I chose three distinct areas to provide a diverse scale:
+- **Forestry (RMK Focus)**: Essential to understand reforestation methods.
+- **Ocean Fishing**: Represents large-scale industrial output.
+- **Meat Consumption**: A relatable social metric.
+
+### 2. The Encoding Battle (Biggest Technical Challenge)
+The raw data from the Estonian Data Portal often uses hierarchical dot notation (e.g., `..loss`) and broken encodings (UTF-8 interpreted as Latin-1, resulting in `Ćµ`). 
+- **Solution**: Instead of manual cleanup, I implemented a robust `csv_fixer.py` using **Regular Expressions** to strip artifacts and a dictionary-based mapping to restore Estonian vowels. This ensures the pipeline is fully reproducible with any new data from the portal.
+
+### 3. Bayesian Reasoning
+To go beyond simple averages, I applied a Bayesian logic to the Forest dataset. We look at the **Prior** probability of planting a forest nationally and update it to a **Posterior** probability when we add the context of a specific region (Saaremaa). This highlights how evidence shifts likelihood.
 
 ## Project Structure
-- `data/`: Contains raw CSV files and a `final_test/` folder with cleaned data.
-- `src/`:
-    - `fetcher.py`: Handles data ingestion from `avaandmed.eesti.ee`.
-    - `csv_fixer.py`: Performs encoding fixes, Regex cleaning, and data reshaping.
-    - `processor.py`: Calculates probabilities and performs Bayesian analysis.
-    - `vizualizer.py`: Generates the final graphical output using `matplotlib`.
-- `main.py`: Orchestrates the entire pipeline from start to finish.
-- `output/`: Stores the final `probabilities.csv` and `probability_scale.png`.
+- `data/queries/`: JSON API query objects.
+- `data/fixed_dataset/`: Cleaned, Tidy-formatted CSVs.
+- `src/fetcher.py`: API ingestion logic.
+- `src/csv_fixer.py`: Regex cleaning and reshaping.
+- `src/processor.py`: Statistical math (Bayesian).
+- `src/vizualizer.py`: Matplotlib plotting.
+- `main.py`: Full pipeline orchestrator.
 
-## Data Sources
-Data is sourced from the **Estonian Data Portal** and includes:
-1. **Forest Management**: Reforestation methods (Planting vs. Sowing) — highly relevant to RMK operations.
-2. **Ocean Fishing**: Catch statistics of the Estonian fleet (e.g., Atlantic Cod likelihood).
-3. **Meat Consumption**: Social and dietary trends in Estonia (e.g., Pork consumption probability).
+## AI Usage Disclosure
+I utilized AI (Gemini) as a specialized pair-programmer for:
+1. **Regular Expressions**: Designing the `re.sub` patterns to clean leading dots without breaking decimal values.
+2. **Refactoring**: Applying PEP8 standards and Type Hints to ensure professional code quality.
+3. **Visualization**: Fine-tuning the Matplotlib aesthetics (z-order and intuition zones).
+*The core logic, data selection, and architectural decisions were driven by human input.*
 
 ## How to Run
-To reproduce the results, ensure you have Python 3.10+ installed and follow these steps:
+1. `pip install -r requirements.txt`
+2. `python main.py`
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Run the full pipeline:**
-    ```bash
-   python main.py
-    ```
-This will download data, clean it, calculate probabilities, and save the visualization.
-
-## Results
-The final output is a scale that helps users understand:
-
-- **National Baseline**: The general probability of an event in Estonia.
-
-- **Contextual Shift (Bayesian)**: How probabilities change (e.g., how much more likely reforestation is to be done by planting in Saaremaa compared to the national average).
+## Final Scale Preview
+The resulting `output/probability_scale.png` categorizes events into **Unlikely**, **Possible**, and **Highly Likely**, providing a clear intuitive benchmark.
