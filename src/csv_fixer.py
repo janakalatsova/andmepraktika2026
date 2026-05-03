@@ -161,14 +161,14 @@ def run() -> None:
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
     input_folder = os.path.join(project_root, 'data')
-    output_folder = os.path.join(input_folder, 'final_test')
+    output_folder = os.path.join(input_folder, 'fixed_dataset')
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
     for f in os.listdir(input_folder):
         # Prevent processing already fixed files or non-csv files
-        if f.endswith('.csv') and '_fixed' not in f and 'final_test' not in f:
+        if f.endswith('.csv') and '_fixed' not in f and 'fixed_dataset' not in f:
             process_file(
                 os.path.join(input_folder, f),
                 os.path.join(output_folder, f.replace('.csv', '_fixed.csv'))

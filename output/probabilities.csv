@@ -1,0 +1,5 @@
+event,probability,source_file
+Consumed meat is Pork (2024),0.53,meat_fixed.csv
+Ocean fish is Atlantic Cod (2024),0.07,fish_fixed.csv
+Forest renewal method is Planting (Whole country),0.89,forest_fixed.csv
+Forest renewal is Planting (Context: Saaremaa),0.99,forest_fixed.csv
